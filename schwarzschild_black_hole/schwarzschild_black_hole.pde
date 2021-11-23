@@ -1,9 +1,4 @@
-
-
-PGraphics render_texture;
-PShader black_hole_shader;
-PImage sky, acc_disk;
-
+// renderer settings
 int render_width = 4096;
 int render_height = 2160;
 float FOV = radians(50);
@@ -14,6 +9,10 @@ float black_hole_distance = 16;
 float acc_disk_min_dist = 1.4;
 float acc_disk_max_dist = 8;
 
+PGraphics render_texture;
+PShader black_hole_shader;
+PImage sky, acc_disk;
+
 PVector up, n;
 PVector bh_center = new PVector(0, 0);
 PVector acc_disk_normal;
@@ -22,7 +21,8 @@ float pp_distance;
 
 
 void setup(){
-  size(1800, 800, P2D);
+  // preview settings
+  size(900, 400, P2D);
   
   up = new PVector(1.0, 0.0);
   up.rotate(black_hole_angle);
@@ -68,6 +68,7 @@ void setup(){
   noStroke();
   background(0);
   shader(black_hole_shader);
+  //uncomment below line to save to disk
   //render("anim", 1, false, false);
   
   rect(0, 0, width, height);

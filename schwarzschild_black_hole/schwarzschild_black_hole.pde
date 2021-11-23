@@ -61,16 +61,16 @@ void setup(){
   black_hole_shader.set("acc_min_u", 1.0 / acc_disk_max_dist);
   black_hole_shader.set("acc_max_u", 1.0 / acc_disk_min_dist);
   
-  black_hole_shader.set("ACC_DISK", 0);
+  black_hole_shader.set("ACC_DISK", 1);
   black_hole_shader.set("SKY", 1);
   
   fill(255);
   noStroke();
   background(0);
   shader(black_hole_shader);
-  render("anim", 1, false, false);
+  //render("anim", 1, false, false);
+  
   rect(0, 0, width, height);
-  //resetShader();
 }
 
 void draw(){

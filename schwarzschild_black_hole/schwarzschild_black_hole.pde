@@ -35,8 +35,8 @@ void setup(){
                   pp_distance);
   n.normalize();
   
-  sky = loadImage("emptysky.jpg");
-  acc_disk = loadImage("acc_disk2.png");
+  sky = loadImage("sky_bg.jpg");
+  acc_disk = loadImage("acc_disk.png");
   
   black_hole_shader = loadShader("blackhole.frag");
   

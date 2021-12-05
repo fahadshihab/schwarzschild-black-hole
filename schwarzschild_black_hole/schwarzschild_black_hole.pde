@@ -1,20 +1,21 @@
 // renderer settings
-int render_width = 4096;
-int render_height = 2160;
+int RENDER_WIDTH = 4096;
+int RENDER_HEIGHT = 2160;
 float FOV = radians(50);
-float black_hole_angle = radians(3);
+float BLACK_HOLE_ANGLE = radians(3);
+float BLACK_HOLE_DISTANCE = 16;
+float ACC_DISK_MIN_DIST = 1.4;
+float ACC_DISK_MAX_DIST = 8;
+PVector BH_CENTER = new PVector(0, 0);
+
 float dphi = radians(0.03);
 float max_angle = radians(360);
-float black_hole_distance = 16;
-float acc_disk_min_dist = 1.4;
-float acc_disk_max_dist = 8;
 
 PGraphics render_texture;
 PShader black_hole_shader;
 PImage sky, acc_disk;
 
 PVector up, n;
-PVector bh_center = new PVector(0, 0);
 PVector acc_disk_normal;
 PVector acc_disk_ref;
 float pp_distance;
@@ -25,13 +26,13 @@ void setup(){
   size(900, 400, P2D);
   
   up = new PVector(1.0, 0.0);
-  up.rotate(black_hole_angle);
+  up.rotate(BLACK_HOLE_ANGLE);
   acc_disk_normal = new PVector(0.0, up.x, up.y);
   acc_disk_ref = new PVector(0.0, -up.y, up.x);
   
   pp_distance = width / tan(FOV);
-  n = new PVector(bh_center.x * width,
-                  bh_center.y * height,
+  n = new PVector(BH_CENTER.x * width,
+                  BH_CENTER.y * height,
                   pp_distance);
   n.normalize();
   
@@ -41,7 +42,7 @@ void setup(){
   black_hole_shader = loadShader("blackhole.frag");
   
   black_hole_shader.set("center", (float) width/2, (float) height/2);
-  black_hole_shader.set("u0", 1.0 / black_hole_distance);
+  black_hole_shader.set("u0", 1.0 / BLACK_HOLE_DISTANCE);
   black_hole_shader.set("n", n.x, n.y, n.z);
   black_hole_shader.set("pp_distance", pp_distance);
   
@@ -58,8 +59,8 @@ void setup(){
   black_hole_shader.set("dphi", dphi);
   black_hole_shader.set("NSTEPS", (int) (max_angle / dphi));
   
-  black_hole_shader.set("acc_min_u", 1.0 / acc_disk_max_dist);
-  black_hole_shader.set("acc_max_u", 1.0 / acc_disk_min_dist);
+  black_hole_shader.set("acc_min_u", 1.0 / ACC_DISK_MAX_DIST);
+  black_hole_shader.set("acc_max_u", 1.0 / ACC_DISK_MIN_DIST);
   
   black_hole_shader.set("ACC_DISK", 1);
   black_hole_shader.set("SKY", 1);
@@ -94,54 +95,44 @@ void draw(){
 }
 
 void render(String dir, int num, boolean sky, boolean bh){
-  render_texture = createGraphics(render_width, render_height, P2D);
+  render_texture = createGraphics(RENDER_WIDTH, RENDER_HEIGHT, P2D);
   
-  pp_distance = render_width / tan(FOV);
-  n = new PVector(bh_center.x * render_width,
-                  bh_center.y * render_height,
+  pp_distance = RENDER_WIDTH / tan(FOV);
+  n = new PVector(BH_CENTER.x * RENDER_WIDTH,
+                  BH_CENTER.y * RENDER_HEIGHT,
                   pp_distance);
                   
-  black_hole_shader.set("center", (float) render_width/2, (float) render_height/2);
-  black_hole_shader.set("u0", 1.0 / black_hole_distance);
+  black_hole_shader.set("center", (float) RENDER_WIDTH/2, (float) RENDER_HEIGHT/2);
+  black_hole_shader.set("u0", 1.0 / BLACK_HOLE_DISTANCE);
   black_hole_shader.set("n", 0.0, 0.0, 1.0);
   black_hole_shader.set("pp_distance", pp_distance);
+
+  render_texture.beginDraw();
+  render_texture.fill(255);
+  render_texture.noStroke();
+  render_texture.shader(black_hole_shader);
   
   if(bh){
     black_hole_shader.set("ACC_DISK", 1);
     black_hole_shader.set("SKY", 0);
-    render_texture.beginDraw();
-    render_texture.fill(255);
-    render_texture.noStroke();
-    //render_texture.background(200);
-    render_texture.shader(black_hole_shader);
-    render_texture.rect(0, 0, render_width, render_height);
+    render_texture.rect(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
     render_texture.save(dir + "/acc_disk/" + str(num) + ".png");
   }
   if(sky){
     black_hole_shader.set("ACC_DISK", 0);
     black_hole_shader.set("SKY", 1);
-    render_texture.endDraw();
-    render_texture.beginDraw();
-    render_texture.fill(255);
-    render_texture.noStroke();
-    render_texture.background(200);
-    render_texture.shader(black_hole_shader);
-    render_texture.rect(0, 0, render_width, render_height);
+    render_texture.rect(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
     render_texture.save(dir + "/sky/" + str(num) + ".png");
-    render_texture.endDraw();
   }
   if(! (sky || bh)){
     black_hole_shader.set("ACC_DISK", 1);
     black_hole_shader.set("SKY", 1);
-    render_texture.beginDraw();
-    render_texture.fill(255);
-    render_texture.noStroke();
-    render_texture.background(200);
-    render_texture.shader(black_hole_shader);
-    render_texture.rect(0, 0, render_width, render_height);
+    render_texture.rect(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
     render_texture.save(dir + "/together/" + str(num) + ".png");
-    render_texture.endDraw();
   }
+  
+  render_texture.endDraw();
+  
 }
 
 PVector rotateAboutAxis(PVector u, PVector x, float theta){

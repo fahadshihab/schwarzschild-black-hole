@@ -22,24 +22,27 @@ float INV_TWO_PI = 0.159154943091895;
 float INV_PI = 0.3183098861837906715;
 
 vec4 get_sky_pixel(vec3 dir, sampler2D tex){
-    vec3 dir_proj_x = vec3(dir.x, 0, dir.z);
-    float proj_length = length(dir_proj_x);
+
+    vec3 dir_proj_xz = vec3(dir.x, 0, dir.z); //projects direction vector to xz plane
+    float proj_length = length(dir_proj_xz);
     if(proj_length != 0.0){
-        dir_proj_x = normalize(dir_proj_x);
+        dir_proj_xz = normalize(dir_proj_xz);
     }
+
     vec2 uv;
-    uv.x = (acos(-dir_proj_x.z) * sign(dir_proj_x.x) * INV_TWO_PI) + 0.5;
+    // conversion to azimuth and elevation values and then to texture coordinates
+    uv.x = (acos(-dir_proj_xz.z) * sign(dir_proj_xz.x) * INV_TWO_PI) + 0.5;
     uv.y = (asin(dir.y) * INV_PI) + 0.5;
     return texture2D(tex, uv);
 }
 
+// for the runge-kutta method
 float u2_d(float u1){
     return -u1 * (1.0 - (1.5 * u1 * u1));
 }
 
 void main(void){
-    float m = 1.0 / (acc_min_u - acc_max_u);
-    float c = -m * acc_max_u;
+    // initialisation and calculating initial vectors
     vec3 color = vec3(0.0, 0.0, 0.0);
     float alpha = 0.0;
     int i;
@@ -58,14 +61,17 @@ void main(void){
     float u2 = -u1 * dot(d0, n) / dot(d0, t);
 
     vec3 ray_dir = n;
-    vec3 p_ray_dir = ray_dir;
     float p_ray_dot = dot(ray_dir, acc_disk_normal);
     float ray_dot;
 
+    // this is for mapping u1 values to texture coordinates
+    float m = 1.0 / (acc_min_u - acc_max_u);
+    float c = -m * acc_max_u;
+    
     float k11, k12, k21, k22, k13, k23, k14, k24;
 
     for(i = 0; i < NSTEPS; i++){
-        
+        // runge-kutta 4th order method
         k11 = dphi * (u2);
         k21 = dphi * u2_d(u1);
         k12 = dphi * (u2 + (0.5 * k21));
@@ -78,6 +84,7 @@ void main(void){
         u2 += (k21 + (2.0 * k22) + (2.0 * k23) + k24) / 6.0;
         phi += dphi;
 
+        // signifies ray entering event horizon
         if(u1 > 1.0){
             gl_FragColor = vec4(mix(vec3(0, 0, 0), color, alpha), 1.0);
             return;
@@ -87,18 +94,19 @@ void main(void){
         if(ACC_DISK == 1){
             ray_dir = ((n * cos(phi)) + (t * sin(phi)));
             ray_dot = dot(ray_dir, acc_disk_normal);
-            if(p_ray_dot * ray_dot < 0.0){
+            if(p_ray_dot * ray_dot < 0.0){ // product goes negative as ray_dot crosses zero
                 if(u1 > acc_min_u && u1 < acc_max_u){
                     float angle = (acos(dot(ray_dir, acc_disk_ref)) * INV_TWO_PI) + 0.5;
-                    vec4 acc_pixel = texture2D(acc_disk_texture, vec2(angle, (m * u1) + c));
+                    vec4 acc_pixel = texture2D(acc_disk_texture, vec2(angle, (m * u1) + c)); //for m and c, see declaration
                     alpha = acc_pixel.a;
                     color += acc_pixel.rgb;
                 }
             }
-            p_ray_dir = ray_dir;
+
             p_ray_dot = ray_dot;
         }
 
+        // u1 < 0 signifies ray escape
         if(u1 < 0.0){
             break;
         }
